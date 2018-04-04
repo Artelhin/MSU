@@ -5,6 +5,7 @@ using namespace std;
 
 int main() {
 
-
+	cout << "Nu tut code koroche" << endl;
+	return 0;
 
 }
