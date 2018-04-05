@@ -27,6 +27,5 @@ int main() {
     fin.close();
 
     return 0;
->>>>>>> 109e83144f498ec7cab7ea696a8c3efe6ffd6b3c
 
 }
