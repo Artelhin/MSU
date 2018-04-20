@@ -1,6 +1,6 @@
 program
-{
-	int a = 51, b = 6, c;
+{/*фафыпжфпфцкпфкп*/
+	int a = 51, b = 6, c;//фыаидфцра
 	string x = "abc", y, z = "abcd";
 	c = (a + b) * 2;
 	if (c >= 100 or x == z)

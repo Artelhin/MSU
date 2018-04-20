@@ -4,8 +4,46 @@
 
 using namespace std;
 
+tabl_ident TID(100);
+
+class tabl_cstr {
+    char** p;
+    int size;
+    int top;
+
+public:
+    tabl_cstr(int s) {
+        size = s;
+        p = new char *[size];
+        top = 1;
+    }
+    ~tabl_cstr() {
+        for(int i = 0; i< size; i++) delete [](p[i]);
+        delete []p;
+    }
+
+    char* operator[] (int k) {
+        if (k > size) {
+            S_exep ex = S_exep("tabl_cstr.operator[]: out of array");
+            throw ex;
+        }
+        return p[k];
+    }
+
+    int put(const char* buf) {
+        for(int j = 1; j < top; j++)
+            if (!strcmp(buf,p[j]))
+                return j;
+        p[top] = new char[strlen(buf) + 1];
+        strcpy(p[top], buf);
+        top++;
+        return top-1;
+    }
+
+} TCS(100);
+
 class Scanner {
-    enum state {H, IDENT, NUMB, COM, ALE, DELIM, NEQ };
+    enum state {H, IDENT, NUMB, COM, ALE, DELIM, NEQ, STR };
     static char* TW[];
     static type_of_lex words[];
     static char* TD[];
@@ -29,6 +67,7 @@ class Scanner {
     }
 
     void add() {
+        if (buf_top == 80) throw S_exep("Analizer's buffer overloaded");
         buf[buf_top++] = c;
     }
 
@@ -60,11 +99,13 @@ public:
 
     Scanner(const char* path) {
         fp = fopen(path, "r");
+        if (fp == NULL) throw S_exep("LexicalAnalyzer: file not found");
         CS = H;
         clear();
         line = 1;
         symb = 0;
         gc();
+        if (c == EOF) throw S_exep("LexicalAnalyzer: empty file");
     }
 
     char* getWord(int k) {
@@ -76,6 +117,9 @@ public:
     char* getDelim(int k) {
         return TD[k];
     }
+    char* getConstStr(int k) {
+        return TCS[k];
+    }
 
     Lex get_lex();
 };
@@ -83,7 +127,7 @@ public:
 char* Scanner::TW[] = {
     "",                //    0  not used
     "and",             //    1
-    "bool",            //    2
+    "boolean",         //    2
     "do",              //    3
     "else",            //    4
     "if",              //    5
@@ -93,11 +137,15 @@ char* Scanner::TW[] = {
     "or",              //    9
     "program",         //    10
     "read",            //    11
-    "then",            //    12
-    "true",            //    13
-    "while",           //    14
-    "write",           //    15
-    "string",          //    16
+    "true",            //    12
+    "while",           //    13
+    "write",           //    14
+    "string",          //    15
+    "for",             //    16
+    "break",           //    17
+    "goto",            //    18
+    "struct",          //    19
+    "label",           //    20
     NULL
 };
 
@@ -125,8 +173,6 @@ char * Scanner:: TD[] = {
     NULL
 };
 
-tabl_ident TID(100);
-
 type_of_lex Scanner::words[] = {
     LEX_NULL,
     LEX_AND,
@@ -140,7 +186,6 @@ type_of_lex Scanner::words[] = {
     LEX_OR,
     LEX_PROGRAM,
     LEX_READ,
-    LEX_THEN,
     LEX_TRUE,
     LEX_WHILE,
     LEX_WRITE,
@@ -174,6 +219,8 @@ type_of_lex Scanner::dlms[] = {
 
 Lex Scanner::get_lex() {
     int d, j;
+    int tempLine;
+    int tempSymb;
     CS = H;
     do {
         switch(CS) {
@@ -205,12 +252,19 @@ Lex Scanner::get_lex() {
                     CS = ALE;
                 }
                 else if (c == EOF)
-                    return Lex(LEX_FIN);
+                    return Lex(line, LEX_FIN);
                 else if (c == '!') {
                     clear();
                     add();
                     gc();
                     CS = NEQ;
+                }
+                else if (c == '"') {
+                    clear();
+                    tempLine = line;
+                    tempSymb = symb;
+                    gc();
+                    CS = STR;
                 }
                 else
                     CS = DELIM;
@@ -222,10 +276,10 @@ Lex Scanner::get_lex() {
                     gc();
                 }
                 else if (j = look(buf, TW))
-                    return Lex(words[j], j);
+                    return Lex(line, words[j], j);
                 else {
                     j = TID.put(buf);
-                    return Lex(LEX_ID, j);
+                    return Lex(line, LEX_ID, j);
                 }
                 break;
             case NUMB:
@@ -235,18 +289,19 @@ Lex Scanner::get_lex() {
                     gc();
                 }
                 else
-                    return Lex(LEX_NUM, d);
+                    return Lex(line, LEX_NUM, d);
                 break;
             case COM:
                 if (c == '/') {
                     gc();
                     while(c != '\n') {
-                        if (c == EOF) return Lex(LEX_FIN);
+                        if (c == EOF) return Lex(line, LEX_FIN);
                         gc();
                     }
                     CS = H;
                 }
                 else if (c == '*') {
+                    gc();
                     while (c != '*') {
                         if (c == EOF) {
                             L_exep ex("Sudden EOF in the '/*' commentary",line, symb);
@@ -269,11 +324,11 @@ Lex Scanner::get_lex() {
                     add();
                     gc();
                     j = look(buf, TD);
-                    return Lex(dlms[j], j);
+                    return Lex(line, dlms[j], j);
                 }
                 else {
                     j = look(buf, TD);
-                    return Lex(dlms[j], j);
+                    return Lex(line, dlms[j], j);
                 }
                 break;
             case NEQ:
@@ -282,19 +337,31 @@ Lex Scanner::get_lex() {
                     add();
                     gc();
                     j = look(buf, TD);
-                    return Lex(LEX_NEQ, j);
+                    return Lex(line, LEX_NEQ, j);
                 }
                 else {
                     L_exep ex("Unexpected '!'", line, symb);
                 }
                 break;
+            case STR:
+                while(c != '"') {
+                    add();
+                    gc();
+                    if (c == EOF) {
+                        L_exep ex("Unclosed \" ",tempLine,tempSymb);
+                        throw ex;
+                    }
+                }
+                gc();
+                j = TCS.put(buf);
+                return Lex(line, LEX_CSTRING, j);
             case DELIM:
                 //check();
                 clear();
                 add();
                 if (j = look(buf, TD)) {
                     gc();
-                    return Lex(dlms[j], j);
+                    return Lex(line, dlms[j], j);
                 }
                 else {
                     char* str = new char[20];
