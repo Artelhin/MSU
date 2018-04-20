@@ -18,4 +18,6 @@ public:
         }
         cout << "SyntAnalyser initialized" << endl;
     }
+
+
 }
