@@ -6,7 +6,7 @@ using namespace std;
 void out(Lex l, Scanner s) {
     if((l.get_type() < 17 || l.get_type() == 41 || l.get_type() >= 43) && (l.get_type() != 2 && l.get_type() != 6))
         cout << " Word: '" << s.getWord(l.get_value()) << "'" << endl;
-    else if ((l.get_type() >= 18 && l.get_type() <= 33) || l.get_type() == 40)
+    else if ((l.get_type() >= 18 && l.get_type() <= 33) || l.get_type() == 40 || l.get_type() == 2 || l.get_type() == 6)
         cout << " Delim: '" << s.getDelim(l.get_value()) << "'" << endl;
     else if (l.get_type() == LEX_ID)
         cout << " Ident: '" << TID[l.get_value()].get_name() << "'" << endl;

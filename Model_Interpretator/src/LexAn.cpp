@@ -49,6 +49,7 @@ class Scanner {
     static char* TD[];
     static type_of_lex dlms[];
     state CS;
+    state PS;
     FILE* fp;
     char c;
     char buf[80];
@@ -223,6 +224,7 @@ Lex Scanner::get_lex() {
     int tempSymb;
     CS = H;
     do {
+        //check();
         switch(CS) {
             case H:
                 //check();
@@ -235,6 +237,7 @@ Lex Scanner::get_lex() {
                     add();
                     gc();
                     CS = IDENT;
+                    //check();
                 }
                 else if(isdigit(c)) {
                     d = c - '0';
@@ -266,11 +269,13 @@ Lex Scanner::get_lex() {
                     gc();
                     CS = STR;
                 }
-                else
+                else {
                     CS = DELIM;
+                }
                 break;
             case IDENT:
                 //check();
+                PS = IDENT;
                 if (isalpha(c) || isdigit(c)) {
                     add();
                     gc();
@@ -284,6 +289,7 @@ Lex Scanner::get_lex() {
                 break;
             case NUMB:
                 //check();
+                PS = NUMB;
                 if (isdigit(c)) {
                     d = d * 10 + (c - '0');
                     gc();
@@ -292,13 +298,16 @@ Lex Scanner::get_lex() {
                     return Lex(line, LEX_NUM, d);
                 break;
             case COM:
+                if (PS == IDENT || PS == NUMB) throw L_exep("Unsupported commentary", line, symb);
                 if (c == '/') {
                     gc();
                     while(c != '\n') {
                         if (c == EOF) return Lex(line, LEX_FIN);
                         gc();
                     }
+                    PS = COM;
                     CS = H;
+                    break;
                 }
                 else if (c == '*') {
                     gc();
@@ -314,9 +323,10 @@ Lex Scanner::get_lex() {
                         L_exep ex = L_exep("Expected '/' after '*'", line, symb);
                         throw ex;
                     }
-                    gc();
                     CS = H;
+                    gc();
                 }
+                PS = COM;
                 break;
             case ALE:
                 //check();
@@ -330,6 +340,7 @@ Lex Scanner::get_lex() {
                     j = look(buf, TD);
                     return Lex(line, dlms[j], j);
                 }
+                PS = ALE;
                 break;
             case NEQ:
                 //check();
@@ -342,6 +353,7 @@ Lex Scanner::get_lex() {
                 else {
                     L_exep ex("Unexpected '!'", line, symb);
                 }
+                PS = ALE;
                 break;
             case STR:
                 while(c != '"') {
@@ -354,6 +366,7 @@ Lex Scanner::get_lex() {
                 }
                 gc();
                 j = TCS.put(buf);
+                PS = STR;
                 return Lex(line, LEX_CSTRING, j);
             case DELIM:
                 //check();
@@ -361,6 +374,7 @@ Lex Scanner::get_lex() {
                 add();
                 if (j = look(buf, TD)) {
                     gc();
+                    PS = DELIM;
                     return Lex(line, dlms[j], j);
                 }
                 else {
