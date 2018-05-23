@@ -49,6 +49,10 @@ public:
     void put_value(int v) {
         value = v;
     }
+
+    void put_type(type_of_lex t) { type = t; }
+
+    type_of_lex get_type() { return type; }
 };
 
 class tabl_ident {

@@ -14,6 +14,10 @@ public:
         strcpy(info, str);
     }
 
+    void out() {
+        cout << info << endl;
+    }
+
 friend ostream& operator << (ostream &s, S_exep ex);
 };
 

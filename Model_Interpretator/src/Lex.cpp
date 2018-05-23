@@ -55,7 +55,9 @@ enum type_of_lex {
     LEX_BREAK,       //44
     LEX_GOTO,        //45
     LEX_STRUCT,      //46
-    LEX_LABEL        //47
+    LEX_TSTRUCT,     //47 for struct needs
+    LEX_LABEL,       //48 for goto needs
+    LEX_POINT
 };
 
 class Lex {
@@ -64,6 +66,13 @@ class Lex {
     int line;
 
 public:
+
+    Lex(type_of_lex t, int v = 0, int l = 0) {
+        t_lex = t;
+        v_lex = v;
+        line = l;
+    }
+
     Lex(int l = 0, type_of_lex t = LEX_NULL, int v = 0) {
         t_lex = t;
         v_lex = v;
@@ -72,6 +81,7 @@ public:
 
     type_of_lex get_type() { return t_lex; }
     int get_value() { return v_lex; }
+    int get_line() { return line; }
 
     friend ostream& operator << (ostream &s, Lex l);
 };

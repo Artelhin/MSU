@@ -7,7 +7,7 @@ program
 	{
 		read (y);
 		write (y);
-		write (x + y + z, c);
+		write (c);
 	}
 	else
 	c = a = 21;

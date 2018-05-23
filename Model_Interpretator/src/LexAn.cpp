@@ -146,7 +146,6 @@ char* Scanner::TW[] = {
     "break",           //    17
     "goto",            //    18
     "struct",          //    19
-    "label",           //    20
     NULL
 };
 
@@ -155,10 +154,10 @@ char * Scanner:: TD[] = {
     ";",            //    1
     ",",            //    2
     ":",            //    3
-    ":=",           //    4
+    "=",            //    4
     "(",            //    5
     ")",            //    6
-    "=",            //    7
+    "==",           //    7
     "<",            //    8
     ">",            //    9
     "+",            //    10
@@ -166,11 +165,12 @@ char * Scanner:: TD[] = {
     "*",            //    12
     "/",            //    13
     "<=",           //    14
-    "=",            //    15
+    "!=",            //    15
     ">=",           //    16
     "{",            //    17
     "}",            //    18
     "\"",           //    19
+    ".",            //    20
     NULL
 };
 
@@ -215,6 +215,7 @@ type_of_lex Scanner::dlms[] = {
     LEX_BEGIN,
     LEX_END,
     LEX_QUOTE,
+    LEX_POINT,
     LEX_NULL
 };
 
@@ -374,6 +375,10 @@ Lex Scanner::get_lex() {
                 add();
                 if (j = look(buf, TD)) {
                     gc();
+                    if ( j == 4 && c == '=' ) {
+                        add();
+                        j = look(buf, TD);
+                    }
                     PS = DELIM;
                     return Lex(line, dlms[j], j);
                 }
